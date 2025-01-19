@@ -24,7 +24,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.34.8
 	github.com/beltran/gohive v1.7.0
 	github.com/blang/semver/v4 v4.0.0
-	github.com/buger/jsonparser v1.1.1
 	github.com/bytebase/google-sql-parser v0.0.0-20250116032737-689a327f9465
 	github.com/bytebase/mysql-parser v0.0.0-20241224071214-cb9fd84811dd
 	github.com/bytebase/plsql-parser v0.0.0-20241217100236-775726d725f9

@@ -1,6 +1,7 @@
 package mongodb
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -136,119 +137,44 @@ func TestIsMongoStatement(t *testing.T) {
 }
 
 func TestGetSimpleStatementResult(t *testing.T) {
-	groupsValue := `[
-		"123",
-		"222"
-	]`
+	testData1 := `{
+  "_id": {
+    "$oid": "66f62cad7195ccc0dbdfafbb"
+  },
+  "a": {
+    "$numberLong": "1546786128982089728"
+  }
+}`
+
+	testData2 := `{
+  "_id": {
+    "$oid": "66f6758c30daae815ac8784f"
+  },
+  "name": "dannyyy",
+  "groups": [
+    "123",
+    "222"
+  ]
+}`
 
 	tests := []struct {
 		data string
 		want *v1pb.QueryResult
 	}{
 		{
-			data: `[
-  {
-    "_id": {
-      "$oid": "66f62cad7195ccc0dbdfafbb"
-    },
-    "a": {
-      "$numberLong": "1546786128982089728"
-    }
-  },
-  {
-    "_id": {
-      "$oid": "66f670827941d8cb2bac29d3"
-    },
-    "a": {
-      "$numberLong": "1546786122282089721"
-    }
-  },
-  {
-    "_id": {
-      "$oid": "66f675627ed80fb207320dd9"
-    },
-    "name": "danny",
-    "wew": "iii"
-  },
-  {
-    "_id": {
-      "$oid": "66f6758c30daae815ac8784f"
-    },
-    "name": "dannyyy",
-    "groups": [
-      "123",
-      "222"
-    ]
-  }
-]`,
+			data: fmt.Sprintf(`[%s, %s]`, testData1, testData2),
 			want: &v1pb.QueryResult{
-				ColumnNames:     []string{"_id", "a", "groups", "name", "wew"},
-				ColumnTypeNames: []string{"ObjectId", "Int64", "Array", "String", "String"},
+				ColumnNames:     []string{"result"},
+				ColumnTypeNames: []string{"TEXT"},
 				Rows: []*v1pb.QueryRow{
 					{
 						Values: []*v1pb.RowValue{
-							{Kind: &v1pb.RowValue_StringValue{StringValue: `ObjectID("66f62cad7195ccc0dbdfafbb")`}},
-							{Kind: &v1pb.RowValue_Int64Value{Int64Value: 1546786128982089728}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_NullValue{}},
+							{Kind: &v1pb.RowValue_StringValue{StringValue: testData1}},
 						},
 					},
 					{
 						Values: []*v1pb.RowValue{
-							{Kind: &v1pb.RowValue_StringValue{StringValue: `ObjectID("66f670827941d8cb2bac29d3")`}},
-							{Kind: &v1pb.RowValue_Int64Value{Int64Value: 1546786122282089721}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-						},
-					},
-					{
-						Values: []*v1pb.RowValue{
-							{Kind: &v1pb.RowValue_StringValue{StringValue: `ObjectID("66f675627ed80fb207320dd9")`}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_StringValue{StringValue: "danny"}},
-							{Kind: &v1pb.RowValue_StringValue{StringValue: "iii"}},
-						},
-					},
-					{
-						Values: []*v1pb.RowValue{
-							{Kind: &v1pb.RowValue_StringValue{StringValue: `ObjectID("66f6758c30daae815ac8784f")`}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-							{Kind: &v1pb.RowValue_StringValue{StringValue: groupsValue}},
-							{Kind: &v1pb.RowValue_StringValue{StringValue: "dannyyy"}},
-							{Kind: &v1pb.RowValue_NullValue{}},
-						},
-					},
-				},
-			},
-		},
-		{
-			data: `
-{
-    "_id": {
-      "$oid": "66f6758c30daae815ac8784f"
-    },
-    "a": {
-      "$numberLong": "1546786122282089721"
-    },
-    "name": "dannyyy",
-    "groups": [
-      "123",
-      "222"
-    ]
-}`,
-			want: &v1pb.QueryResult{
-				ColumnNames:     []string{"_id", "a", "groups", "name"},
-				ColumnTypeNames: []string{"ObjectId", "Int64", "Array", "String"},
-				Rows: []*v1pb.QueryRow{
-					{
-						Values: []*v1pb.RowValue{
-							{Kind: &v1pb.RowValue_StringValue{StringValue: `ObjectID("66f6758c30daae815ac8784f")`}},
-							{Kind: &v1pb.RowValue_Int64Value{Int64Value: 1546786122282089721}},
-							{Kind: &v1pb.RowValue_StringValue{StringValue: groupsValue}},
-							{Kind: &v1pb.RowValue_StringValue{StringValue: "dannyyy"}},
+							{Kind: &v1pb.RowValue_StringValue{StringValue: testData2}},
 						},
 					},
 				},
@@ -262,45 +188,5 @@ func TestGetSimpleStatementResult(t *testing.T) {
 		a.NoError(err)
 		diff := cmp.Diff(tt.want, result, protocmp.Transform(), protocmp.IgnoreMessages(&durationpb.Duration{}))
 		a.Empty(diff)
-	}
-}
-
-func TestGetOrderedColumns(t *testing.T) {
-	tests := []struct {
-		input              map[string]bool
-		wantColumns        []string
-		wantColumnIndexMap map[string]int
-	}{
-		{
-			input:              map[string]bool{},
-			wantColumns:        []string{},
-			wantColumnIndexMap: map[string]int{},
-		},
-		{
-			input:              map[string]bool{"_id": true},
-			wantColumns:        []string{"_id"},
-			wantColumnIndexMap: map[string]int{"_id": 0},
-		},
-		{
-			input:              map[string]bool{"a": true},
-			wantColumns:        []string{"a"},
-			wantColumnIndexMap: map[string]int{"a": 0},
-		},
-		{
-			input:              map[string]bool{"a": true, "_id": true, "b": true},
-			wantColumns:        []string{"_id", "a", "b"},
-			wantColumnIndexMap: map[string]int{"_id": 0, "a": 1, "b": 2},
-		},
-		{
-			input:              map[string]bool{"_id": true, "a": true, "b": true},
-			wantColumns:        []string{"_id", "a", "b"},
-			wantColumnIndexMap: map[string]int{"_id": 0, "a": 1, "b": 2},
-		},
-	}
-	a := require.New(t)
-	for _, tt := range tests {
-		gotColumns, gotMap := getOrderedColumns(tt.input)
-		a.ElementsMatch(tt.wantColumns, gotColumns)
-		a.Equal(tt.wantColumnIndexMap, gotMap)
 	}
 }
